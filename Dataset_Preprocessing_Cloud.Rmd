@@ -1,0 +1,163 @@
+---
+title: "Dataset_preprocessing_Cloud"
+author: "Nour Alassali 2631076, Seoyeong Ahn 2832242, Nina Olenderek 2671423"
+date: "2024-01-29"
+output: html_document
+---
+## Smell Sources Column preprocessing and visualisation:
+
+1. Poor dataset preprocessing and word cloud graph:
+```{r include=FALSE}
+library(tidytext)
+library(stopwords)
+library(dplyr)
+library(ggplot2)
+library(ggwordcloud)
+library(readxl)
+
+#read file, save and omit NA values
+poor <- read_excel("poor.xlsx")
+dataset <- poor
+
+df_filtered <- dataset %>% select(Smell_Source) %>% na.omit()
+
+df_filtered <- df_filtered %>% mutate(id = row_number()) #create index for merging later
+tokens <- df_filtered %>% unnest_tokens(word, Smell_Source) #tokenise
+
+
+mystopwords <- stopwords(language = 'en', source = 'snowball')
+custom_words <- c("like") #add a custom word to be removed which shows up only in poor dataset so only removed here
+all_words_to_remove <- unique(c(mystopwords, custom_words))
+tokens_clean <- tokens %>% filter(!word %in% all_words_to_remove)
+
+punctuation <- c('.', ',', ':', ';', '?', '/', '|') #create a list of punctuation
+tokens_clean <- tokens_clean %>% filter(!word %in% punctuation) #remove punctuation
+
+
+df_final <- tokens_clean %>%
+  group_by(id) %>%
+  mutate(search_term = paste0(word, collapse = " ")) #new column with search term without stopwords
+
+#calculate frequency of words
+frequencies <- df_final %>%
+  group_by(word) %>%
+  summarize(termfreq = n(),
+            docfreq = length(unique(id)),
+            relfreq = docfreq / nrow(df_final)) %>%
+  arrange(-docfreq)
+```
+
+```{r}
+#word cloud graph poor
+frequencies %>%
+  slice_max(termfreq, n=50) %>%
+  ggplot() + 
+  geom_text_wordcloud(aes(label = word, size = termfreq * 10, color = termfreq)) +
+  scale_color_gradient(low = "black", high = "red") + 
+  theme_minimal() +
+  theme( plot.background = element_rect(fill = alpha("#f7d87f", 0.4), color = NA)) +
+  scale_size_area(max_size = 10) 
+```
+
+
+2. Rich dataset preprocessing and word cloud graph:
+```{r include=FALSE}
+#read file, save and omit NA values
+rich <- read_excel("rich.xlsx")
+dataset1 <- rich
+
+df_filtered1 <- dataset1 %>% select(Smell_Source) %>% na.omit()
+
+
+df_filtered1 <- df_filtered1 %>% mutate(id = row_number()) #create index for merging later
+tokens1 <- df_filtered1 %>% unnest_tokens(word, Smell_Source) #tokenise
+
+#function to replace only the words oils with oil since it is the only words that needs stemming in the dataset and using stemming for all words messes up the rest
+replace_oils_with_oil <- function(text) {
+  gsub("\\boils\\b", "oil", text, ignore.case = TRUE)
+}
+tokens1$word <- sapply(tokens1$word, replace_oils_with_oil)
+
+
+mystopwords1 <- stopwords(language = 'en', source = 'snowball') #define a list of stopwrods
+tokens_clean1 <- tokens1 %>% filter(!word %in% mystopwords1) #remove stopwords
+
+punctuation1 <- c('.', ',', ':', ';', '?', '/', '|') #create a list of punctuation
+tokens_clean1 <- tokens_clean1 %>% filter(!word %in% punctuation1) #remove punctuation
+
+
+df_final1 <- tokens_clean1 %>%
+  group_by(id) %>%
+  mutate(search_term1 = paste0(word, collapse = " ")) #new column with search term without stopwords
+
+frequencies1 <- df_final1 %>%
+  group_by(word) %>%
+  summarize(termfreq1 = n(),
+            docfreq1 = length(unique(id)),
+            relfreq1 = docfreq1 / nrow(df_final1)) %>%
+  arrange(-docfreq1)
+
+```
+
+```{r}
+#word cloud graph rich
+frequencies1 %>%  
+  slice_max(termfreq1, n=50) %>%
+  ggplot() + 
+  geom_text_wordcloud(aes(label = word, size = termfreq1 * 10, color = termfreq1)) +
+  scale_color_gradient(low = "gray1", high = "red") + 
+  theme_minimal() +
+  theme( plot.background = element_rect(fill = alpha("#da9384", 0.4), color = NA)) +
+  scale_size_area(max_size = 10)
+```
+
+3. Human dataset preprocessing and word cloud graph:
+```{r include=FALSE}
+
+#read file, save and omit NA values
+human <- read_excel("human.xlsx")
+dataset2 <- human
+
+df_filtered2 <- dataset2 %>% select(Smell_Source) %>% na.omit()
+df_filtered2 <- df_filtered2 %>% mutate(id = row_number()) #create index for merging later
+tokens2 <- df_filtered2 %>% unnest_tokens(word, Smell_Source) #tokenise
+
+mystopwords2 <- stopwords(language = 'en', source = 'snowball') #define a list of stopwrods
+tokens_clean2 <- tokens2 %>% filter(!word %in% mystopwords2) #remove stopwords
+
+punctuation2 <- c('.', ',', ':', ';', '?', '/', '|') #create a list of punctuation
+tokens_clean2 <- tokens_clean2 %>% filter(!word %in% punctuation2) #remove punctuation
+
+df_final2 <- tokens_clean2 %>%
+  group_by(id) %>%
+  mutate(search_term = paste0(word, collapse = " ")) #new column with search term without stopwords
+
+frequencies2 <- df_final2 %>%
+  group_by(word) %>%
+  summarize(termfreq2 = n(),
+            docfreq2 = length(unique(id)),
+            relfreq2 = docfreq2 / nrow(df_final2)) %>%
+  arrange(-docfreq2)
+
+```
+
+```{r}
+#word cloud graph human
+frequencies2 %>%  
+  slice_max(termfreq2, n=50) %>%
+  ggplot() + 
+  geom_text_wordcloud(aes(label = word, size = termfreq2 * 10, color = termfreq2)) +
+  scale_color_gradient(low = "gray1", high = "red") + 
+  theme_minimal() +
+  theme( plot.background = element_rect(fill = alpha("#b3e5f2", 0.4), color = NA)) +
+  scale_size_area(max_size = 10)
+```
+
+
+4. Saving resulting preprocessed dataset and frequencies in seperate CSV files:
+```{r}
+write.csv(frequencies, file = "poor_freq.csv", row.names = FALSE)
+write.csv(frequencies1, file = "rich_freq.csv", row.names = FALSE)
+write.csv(frequencies2, file = "human_freq.csv", row.names = FALSE)
+```
+
