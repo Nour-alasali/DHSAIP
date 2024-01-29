@@ -1,5 +1,4 @@
-# DHSAIP
-Digital Humanities and Social Analytics in Practice
+# Digital Humanities and Social Analytics in Practice Project Smell Stories
 
 Information on the content:
 
