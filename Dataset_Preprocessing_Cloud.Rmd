@@ -156,8 +156,23 @@ frequencies2 %>%
 
 4. Saving resulting preprocessed dataset and frequencies in seperate CSV files:
 ```{r}
+# Write the data frame to a CSV file
 write.csv(frequencies, file = "poor_freq.csv", row.names = FALSE)
 write.csv(frequencies1, file = "rich_freq.csv", row.names = FALSE)
 write.csv(frequencies2, file = "human_freq.csv", row.names = FALSE)
+```
+
+5. Statistically testing correlation of smell qualities with social classes
+```{r}
+#contingency table of values based on the contingency table created in jupyter notebook excluding human to compare only social classes
+contingency_table <- matrix(c(27, 4, 5, 30),
+                            nrow = 2,
+                            byrow = TRUE,
+                            dimnames = list(smell_source_quality = c("negative", "positive"),
+                                            class = c("poor", "rich")))
+
+#chi-square test
+chi_square_test <- chisq.test(contingency_table)
+print(chi_square_test)
 ```
 
